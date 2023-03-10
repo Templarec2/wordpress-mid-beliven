@@ -10,48 +10,25 @@
  * @subpackage Plugin_Name/public
  */
 
-/**
- * The public-facing functionality of the plugin.
- *
- * Defines the plugin name, version, and two examples hooks for how to
- * enqueue the public-facing stylesheet and JavaScript.
- *
- * @package    Plugin_Name
- * @subpackage Plugin_Name/public
- * @author     Your Name <email@example.com>
- */
 class Plugin_Name_Public {
 
-	/**
-	 * The ID of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $plugin_name    The ID of this plugin.
-	 */
 	private $plugin_name;
 
-	/**
-	 * The version of this plugin.
-	 *
-	 * @since    1.0.0
-	 * @access   private
-	 * @var      string    $version    The current version of this plugin.
-	 */
 	private $version;
 
-	/**
-	 * Initialize the class and set its properties.
-	 *
-	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of the plugin.
-	 * @param      string    $version    The version of this plugin.
-	 */
 	public function __construct( $plugin_name, $version ) {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
+    /*
+         Hook che viene triggerato quando un post passa allo stato publish e trash (Create, Delete) OBSOLETA
+       */
+    //add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
+    
+    /*
+  Hook che viene triggerato quando un post viene aggiornato (CUD)
+*/
+    add_action('post_updated', array($this, 'log_update_post'), 10, 3);
 	}
 
 	/**
@@ -99,5 +76,119 @@ class Plugin_Name_Public {
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/plugin-name-public.js', array( 'jquery' ), $this->version, false );
 
 	}
- 
+  
+  /*
+      Funzione salvataggio log post creati ed eliminati (non serve più)
+    */
+  public function log_new_post($new, $old, $post)
+  {
+    if ((($new == 'publish') && ($old != 'publish')) && ($post->post_type !== 'logs')) {
+      $my_post = array(
+          'post_title' => "Post: $post->ID - $new",
+          'post_content' => "",
+          'post_status' => 'publish',
+          'post_type' => 'logs',
+          'post_author' => 1,
+      
+      );
+      
+      $saved_post = wp_insert_post($my_post);
+      $other_data = [
+          'id' => $post->ID,
+          'title' => $post->post_title,
+      
+      ];
+      $other_data = json_encode($other_data);
+      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+      } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+      }
+      update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
+      update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
+      update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
+      update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
+      update_post_meta($saved_post, $this->plugin_name.'_log_action', $post->post_status);
+      update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
+    }
+    if ((($new == 'trash') && ($old != 'trash')) && ($post->post_type !== 'logs')) {
+      $my_post = array(
+          'post_title' => "Post: $post->ID - $new",
+          'post_content' => "",
+          'post_status' => 'publish',
+          'post_type' => 'logs',
+          'post_author' => 1,
+      
+      );
+      $saved_post = wp_insert_post($my_post);
+      $other_data = [
+          'id' => $post->ID,
+          'title' => $post->post_title,
+      
+      ];
+      $other_data = json_encode($other_data);
+      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+      } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+      }
+      update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
+      update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
+      update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
+      update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
+      update_post_meta($saved_post, $this->plugin_name.'_log_action', $post->post_status);
+      update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
+    }
+  }
+  
+  /*
+    Funzione salvataggio log post aggiornati
+  */
+  public function log_update_post($post_id, $post, $post_before)
+  {
+    if ($post->post_type === 'logs') {
+      return;
+    }
+    $post_status = $post->post_status;
+    
+    if ( $post->post_status !== 'trash' && ($post->post_date !== $post->post_modified)){
+      $post_status = 'update';
+    }
+    
+    $my_post = array(
+        'post_title' => "Post: $post->ID - $post_status",
+        'post_content' => "",
+        'post_status' => 'publish',
+        'post_type' => 'logs',
+        'post_author' => 1,
+    
+    );
+    
+    $saved_post = wp_insert_post($my_post);
+    $other_data = [
+        'id' => $post->ID,
+        'title' => $post->post_title,
+    
+    ];
+    $other_data = json_encode($other_data);
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+      $ip = $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+      $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+    } else {
+      $ip = $_SERVER['REMOTE_ADDR'];
+    }
+    update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
+    update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
+    update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
+    update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
+    update_post_meta($saved_post, $this->plugin_name.'_log_action', $post_status);
+    update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
+    
+    
+  }
 }

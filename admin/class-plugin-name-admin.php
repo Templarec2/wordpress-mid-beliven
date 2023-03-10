@@ -10,81 +10,58 @@
    * @subpackage Plugin_Name/admin
    */
   
-  /**
-   * The admin-specific functionality of the plugin.
-   *
-   * Defines the plugin name, version, and two examples hooks for how to
-   * enqueue the admin-specific stylesheet and JavaScript.
-   *
-   * @package    Plugin_Name
-   * @subpackage Plugin_Name/admin
-   * @author     Your Name <email@example.com>
-   */
   class Plugin_Name_Admin
   {
     
-    /**
-     * The ID of this plugin.
-     *
-     * @since    1.0.0
-     * @access   private
-     * @var      string $plugin_name The ID of this plugin.
-     */
     private $plugin_name;
     
-    /**
-     * The version of this plugin.
-     *
-     * @since    1.0.0
-     * @access   private
-     * @var      string $version The current version of this plugin.
-     */
     private $version;
     
-    /**
-     * Initialize the class and set its properties.
-     *
-     * @param string $plugin_name The name of this plugin.
-     * @param string $version The version of this plugin.
-     * @since    1.0.0
-     */
     public function __construct($plugin_name, $version)
     {
       
       $this->plugin_name = $plugin_name;
       $this->version = $version;
       
+      /*
+        Registrazione nuovo custom post type logs
+      */
       add_action('init', array($this, 'register_custom_post_types'));
-      add_action('admin_init', array($this, 'add_theme_caps'));
-      
-      add_filter('manage_posts_columns', array($this, 'custom_logs_table_head'));
-      add_action('manage_posts_custom_column', array($this, 'custom_logs_table_content'), 10, 2);
-
-//      add_action('add_meta_boxes_logs', array($this, 'setupCustomPostTypeMetaboxes'));
-//      add_action('save_post_logs', array($this, 'saveCustomPostTypeMetaBoxData'));
-      add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
-      add_action('post_updated', array($this, 'log_update_post'), 10, 3);
-    }
-    
-    /**
-     * Register the stylesheets for the admin area.
-     *
-     * @since    1.0.0
+      /*
+       Assegnazione capabilities ad editor e Admin
      */
+      add_action('admin_init', array($this, 'add_theme_caps'));
+      /*
+       Aggiunta colonne nella visualizzazione pagina admin del custom post type
+     */
+      add_filter('manage_posts_columns', array($this, 'custom_logs_table_head'));
+      /*
+       Assegnazione fields dei meta alle colonne sopra create
+     */
+      add_action('manage_posts_custom_column', array($this, 'custom_logs_table_content'), 10, 2);
+      /*
+        Creazione metabox per debug iniziale dei meta
+      */
+      //  add_action('add_meta_boxes_logs', array($this, 'setupCustomPostTypeMetaboxes'));
+      //  add_action('save_post_logs', array($this, 'saveCustomPostTypeMetaBoxData'));
+  
+      /*
+       Hook che viene triggerato quando un post passa allo stato publish e trash (Create, Delete) OBSOLETA
+     */
+        //add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
+        
+        /*
+      Hook che viene triggerato quando un post viene aggiornato (Update) - SPOSTATA IN PUBLIC
+    */
+      //add_action('post_updated', array($this, 'log_update_post'), 10, 3);
+    }
+  
+    /*
+      Funzioni
+    */
     public function enqueue_styles()
     {
       
-      /**
-       * This function is provided for demonstration purposes only.
-       *
-       * An instance of this class should be passed to the run() function
-       * defined in Plugin_Name_Loader as all of the hooks are defined
-       * in that particular class.
-       *
-       * The Plugin_Name_Loader will then create the relationship
-       * between the defined hooks and the functions defined in this
-       * class.
-       */
       
       wp_enqueue_style(
           $this->plugin_name,
@@ -96,25 +73,8 @@
       
     }
     
-    /**
-     * Register the JavaScript for the admin area.
-     *
-     * @since    1.0.0
-     */
     public function enqueue_scripts()
     {
-      
-      /**
-       * This function is provided for demonstration purposes only.
-       *
-       * An instance of this class should be passed to the run() function
-       * defined in Plugin_Name_Loader as all of the hooks are defined
-       * in that particular class.
-       *
-       * The Plugin_Name_Loader will then create the relationship
-       * between the defined hooks and the functions defined in this
-       * class.
-       */
       
       wp_enqueue_script(
           $this->plugin_name,
@@ -125,7 +85,10 @@
       );
       
     }
-    
+  
+    /*
+     Funzione che registra il CPT
+    */
     public function register_custom_post_types()
     {
       $customPostTypeArgs = array(
@@ -169,6 +132,9 @@
       register_post_type('logs', $customPostTypeArgs);
     }
     
+    /*
+       Funzione che assegna capabilities
+     */
     public function add_theme_caps()
     {
       // gets the administrator role
@@ -191,8 +157,25 @@
       $editors->add_cap('read_log');
       $editors->add_cap('read_private_logs');
       $editors->add_cap('delete_log');
+      
+      $authors = get_role('author');
+      $authors->add_cap('edit_log', false);
+      $authors->add_cap('edit_logs', false);
+      $authors->add_cap('edit_other_logs', false);
+      $authors->add_cap('publish_logs');
+      $authors->add_cap('read_log', false);
+      $authors->add_cap('read_private_logs', false);
+      $authors->add_cap('delete_log', false);
+      
+      $contributors = get_role('contributor');
+      
+      $contributors->add_cap('publish_logs');
+      
     }
-    
+  
+    /*
+      Funzione che crea colonne nel view del CPT
+    */
     public function custom_logs_table_head($columns)
     {
       $post_type = get_post_type();
@@ -213,7 +196,10 @@
       return $columns;
       
     }
-    
+  
+    /*
+     Funzione che assegna fields meta alle colonne CPT
+    */
     public function custom_logs_table_content($name)
     {
       global $post;
@@ -251,7 +237,10 @@
       
       
     }
-    
+  
+    /*
+      Funzioni debug iniziali delle metabox
+    */
     public function setupCustomPostTypeMetaboxes()
     {
       add_meta_box(
@@ -263,8 +252,8 @@
           'high'
       );
     }
-
-//  public function custom_post_type_data_meta_box($post){
+    public function custom_post_type_data_meta_box($post)
+    {
 //    // Add a nonce field so we can check for it later.
 ////    wp_nonce_field( $this->plugin_name.'_affiliate_meta_box', $this->plugin_name.'_affiliates_meta_box_nonce' );
 //
@@ -371,8 +360,9 @@
 //    );
 //    $this->plugin_name_render_settings_field($args);
 //    echo '</li></ul></div>';
-//  }
-//  public function plugin_name_render_settings_field($args) {
+    }
+    public function plugin_name_render_settings_field($args)
+    {
 //    if($args['wp_data'] == 'option'){
 //      $wp_data_value = get_option($args['name']);
 //    } elseif($args['wp_data'] == 'post_meta'){
@@ -465,7 +455,11 @@
 //    update_post_meta($post_id, $this->plugin_name.'_log_action',$log_action);
 //    update_post_meta($post_id, $this->plugin_name.'_log_metadata',$log_metadata);
 //
-//  }
+    }
+  
+    /*
+      Funzione salvataggio log post creati ed eliminati OBSOLETA
+    */
     public function log_new_post($new, $old, $post)
     {
       if ((($new == 'publish') && ($old != 'publish')) && ($post->post_type !== 'logs')) {
@@ -477,7 +471,7 @@
             'post_author' => 1,
         
         );
-      
+        
         $saved_post = wp_insert_post($my_post);
         $other_data = [
             'id' => $post->ID,
@@ -530,42 +524,45 @@
         update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
       }
     }
-    
+  
+    /*
+      Funzione salvataggio log post aggiornati SPOSTATA IN PUBLIC
+    */
     public function log_update_post($post_id, $post, $post_before)
     {
-     if ($post->post_type === 'logs'){
-       return;
-     }
-     
-        $my_post = array(
-            'post_title' => "Post: $post->ID - Update",
-            'post_content' => "",
-            'post_status' => 'publish',
-            'post_type' => 'logs',
-            'post_author' => 1,
-        
-        );
-     
-        $saved_post = wp_insert_post($my_post);
-        $other_data = [
-            'id' => $post->ID,
-            'title' => $post->post_title,
-        
-        ];
-        $other_data = json_encode($other_data);
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-          $ip = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-          $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } else {
-          $ip = $_SERVER['REMOTE_ADDR'];
-        }
-        update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
-        update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
-        update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
-        update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
-        update_post_meta($saved_post, $this->plugin_name.'_log_action', 'update');
-        update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
+      if ($post->post_type === 'logs') {
+        return;
+      }
+      
+      $my_post = array(
+          'post_title' => "Post: $post->ID - Update",
+          'post_content' => "",
+          'post_status' => 'publish',
+          'post_type' => 'logs',
+          'post_author' => 1,
+      
+      );
+      
+      $saved_post = wp_insert_post($my_post);
+      $other_data = [
+          'id' => $post->ID,
+          'title' => $post->post_title,
+      
+      ];
+      $other_data = json_encode($other_data);
+      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        $ip = $_SERVER['HTTP_CLIENT_IP'];
+      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+      } else {
+        $ip = $_SERVER['REMOTE_ADDR'];
+      }
+      update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
+      update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
+      update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
+      update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
+      update_post_meta($saved_post, $this->plugin_name.'_log_action', 'update');
+      update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
       
       
     }
