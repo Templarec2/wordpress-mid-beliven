@@ -31,8 +31,8 @@
        Assegnazione capabilities ad editor e Admin
      */
       add_action('admin_init', array($this, 'add_theme_caps'));
-  
-      add_action( 'admin_menu', array($this, 'logs_option_page') );
+      
+      add_action('admin_menu', array($this, 'logs_option_page'));
       /*
        Aggiunta colonne nella visualizzazione pagina admin del custom post type
      */
@@ -41,26 +41,27 @@
        Assegnazione fields dei meta alle colonne sopra create
      */
       add_action('manage_posts_custom_column', array($this, 'custom_logs_table_content'), 10, 2);
-  
-      add_action( 'bl_cron_log_retention_hook', array($this, 'logs_retention' ) );
-    
+      add_filter('cron_schedules', array($this, 'my_minutly'));
+      add_action('bl_cron_log_retention', array($this, 'logs_retention'));
+      
+      
       /*
         Creazione metabox per debug iniziale dei meta
       */
       //  add_action('add_meta_boxes_logs', array($this, 'setupCustomPostTypeMetaboxes'));
       //  add_action('save_post_logs', array($this, 'saveCustomPostTypeMetaBoxData'));
-  
+      
       /*
        Hook che viene triggerato quando un post passa allo stato publish e trash (Create, Delete) OBSOLETA
      */
-        //add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
-        
-        /*
-      Hook che viene triggerato quando un post viene aggiornato (Update) - SPOSTATA IN PUBLIC
-    */
+      //add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
+      
+      /*
+    Hook che viene triggerato quando un post viene aggiornato (Update) - SPOSTATA IN PUBLIC
+  */
       //add_action('post_updated', array($this, 'log_update_post'), 10, 3);
     }
-  
+    
     /*
       Funzioni
     */
@@ -90,7 +91,7 @@
       );
       
     }
-  
+    
     /*
      Funzione che registra il CPT
     */
@@ -177,7 +178,7 @@
       $contributors->add_cap('publish_logs');
       
     }
-  
+    
     /*
       Funzione che crea colonne nel view del CPT
     */
@@ -201,7 +202,7 @@
       return $columns;
       
     }
-  
+    
     /*
      Funzione che assegna fields meta alle colonne CPT
     */
@@ -242,7 +243,7 @@
       
       
     }
-  
+    
     /*
       Funzioni debug iniziali delle metabox
     */
@@ -257,6 +258,7 @@
           'high'
       );
     }
+    
     public function custom_post_type_data_meta_box($post)
     {
 //    // Add a nonce field so we can check for it later.
@@ -366,6 +368,7 @@
 //    $this->plugin_name_render_settings_field($args);
 //    echo '</li></ul></div>';
     }
+    
     public function plugin_name_render_settings_field($args)
     {
 //    if($args['wp_data'] == 'option'){
@@ -461,7 +464,7 @@
 //    update_post_meta($post_id, $this->plugin_name.'_log_metadata',$log_metadata);
 //
     }
-  
+    
     /*
       Funzione salvataggio log post creati ed eliminati OBSOLETA
     */
@@ -529,7 +532,7 @@
         update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
       }
     }
-  
+    
     /*
       Funzione salvataggio log post aggiornati SPOSTATA IN PUBLIC
     */
@@ -571,20 +574,23 @@
       
       
     }
-  
-    public function logs_option_page(){
     
+    public function logs_option_page()
+    {
+      
       add_menu_page(
           'Beliven logger options', // page <title>Title</title>
           'Beliven logger options', // link text
           'manage_options', // user capabilities
           'beliven_logger', // page slug
-          array( $this, 'beliven_option_page' ), // this function prints the page content
+          array($this, 'beliven_option_page'), // this function prints the page content
           'dashicons-text', // icon (from Dashicons for example)
           27 // menu position
       );
     }
-    public function beliven_option_page(){
+    
+    public function beliven_option_page()
+    {
       if (isset($_POST['del_logs'])) {
         $value = $_POST['del_logs'];
         update_option('del_logs', $value);
@@ -593,9 +599,56 @@
         $value = $_POST['retention_datetime_logs'];
         update_option('retention_datetime_logs', $value);
       }
-  
-     
+      
+      
       require_once 'partials/options.php';
+    }
+    
+    function my_minutly($schedules)
+    {
+      // add a 'weekly' schedule to the existing set
+      $schedules['minutly'] = array(
+          'interval' => 60,
+          'display' => __('Every minute'),
+      );
+      
+      return $schedules;
+    }
+    
+    public function logs_retention()
+    {
+      
+      $num_gg = get_option('retention_datetime_logs');
+      $num_gg = (int)$num_gg;
+      $oggi = date_create();
+      date_sub($oggi, date_interval_create_from_date_string("$num_gg days"));
+
+      $args = array(
+          'numberposts' => -1,
+          'post_type' => 'logs',
+          'date_query' => array('before' => date_format($oggi, 'Y-m-d')),
+      );
+    
+      $logs = get_posts($args);
+      if (empty($logs)) {
+        return;
+      }
+      foreach ($logs as $log) {
+
+        wp_delete_post($log->ID, true);
+        delete_post_meta($log->ID, $this->plugin_name.'_log_datetime');
+        delete_post_meta($log->ID, $this->plugin_name.'_user_id');
+        delete_post_meta($log->ID, $this->plugin_name.'_user_ip');
+        delete_post_meta($log->ID, $this->plugin_name.'_log_post_type');
+        delete_post_meta($log->ID, $this->plugin_name.'_log_action');
+        delete_post_meta($log->ID, $this->plugin_name.'_log_metadata');
+      
+      }
+
+    
+    
+    }
   }
-  }
+  
+  
 

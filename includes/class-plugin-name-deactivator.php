@@ -50,6 +50,7 @@ class Plugin_Name_Deactivator {
       delete_post_meta($log->ID, $plugin_name.'_log_metadata');
     }
     
+    wp_clear_scheduled_hook('bl_cron_log_retention');
     
 	}
 

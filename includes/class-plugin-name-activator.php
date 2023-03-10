@@ -22,15 +22,11 @@
  */
 class Plugin_Name_Activator {
 
-	/**
-	 * Short Description. (use period)
-	 *
-	 * Long Description.
-	 *
-	 * @since    1.0.0
-	 */
-	public static function activate() {
  
+	public static function activate() {
+    update_option('retention_datetime_logs', 1);
+    wp_schedule_event( time(), 'minutly', 'bl_cron_log_retention'  );
 	}
+ 
 
 }
