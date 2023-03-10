@@ -31,6 +31,7 @@
        Assegnazione capabilities ad editor e Admin
      */
       add_action('admin_init', array($this, 'add_theme_caps'));
+      add_action('admin_init', array($this, 'create_nonce_rest'));
       
       add_action('admin_menu', array($this, 'logs_option_page'));
       /*
@@ -44,6 +45,7 @@
       add_filter('cron_schedules', array($this, 'my_minutly'));
       add_action('bl_cron_log_retention', array($this, 'logs_retention'));
       
+      add_action( 'rest_api_init', array($this, 'logs_endpoints'));
       
       /*
         Creazione metabox per debug iniziale dei meta
@@ -648,6 +650,56 @@
     
     
     }
+
+    public function logs_endpoints(){
+      register_rest_route( 'logger',
+          '/token',
+          array(
+              'methods' => 'POST',
+              'args' => array(),
+              'callback' => array($this, 'generate_token'),
+          ) );
+      register_rest_route( 'logger',
+          '/logs',
+          array(
+          'methods' => 'GET',
+              'args' => array(),
+          'callback' => array($this, 'log_list'),
+              'permission_callback' => function () {
+                return current_user_can('edit_others_posts');
+              }
+      ) );
+    }
+    public function generate_token(){
+      if(!isset($_POST['username'])) return 'Username required';
+      if(!isset($_POST['password'])) return 'password required';
+      if(!isset($_POST['app_pass'])) return 'app_pass required';
+      $username = $_POST['username'];
+      $password = $_POST['password'];
+      $app_pass = $_POST['app_pass'];
+      
+       if(user_pass_ok($username, $password)){
+         $token = base64_encode($username . ':'.$app_pass);
+         $result = [
+             'token' => $token
+         ];
+         return $token;
+       } else {
+         return [
+             'status' => false,
+             'message' => 'Invalid credentials'
+         ];
+       }
+    }
+    public function log_list(){
+      $args = array(
+          'numberposts' => -1,
+          'post_type' => 'logs',
+        
+      );
+      $logs = get_posts($args);
+      return $logs;
+  }
   }
   
   
