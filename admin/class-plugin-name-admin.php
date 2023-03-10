@@ -31,6 +31,8 @@
        Assegnazione capabilities ad editor e Admin
      */
       add_action('admin_init', array($this, 'add_theme_caps'));
+  
+      add_action( 'admin_menu', array($this, 'logs_option_page') );
       /*
        Aggiunta colonne nella visualizzazione pagina admin del custom post type
      */
@@ -39,6 +41,9 @@
        Assegnazione fields dei meta alle colonne sopra create
      */
       add_action('manage_posts_custom_column', array($this, 'custom_logs_table_content'), 10, 2);
+  
+      add_action( 'bl_cron_log_retention_hook', array($this, 'logs_retention' ) );
+    
       /*
         Creazione metabox per debug iniziale dei meta
       */
@@ -566,6 +571,31 @@
       
       
     }
+  
+    public function logs_option_page(){
     
+      add_menu_page(
+          'Beliven logger options', // page <title>Title</title>
+          'Beliven logger options', // link text
+          'manage_options', // user capabilities
+          'beliven_logger', // page slug
+          array( $this, 'beliven_option_page' ), // this function prints the page content
+          'dashicons-text', // icon (from Dashicons for example)
+          27 // menu position
+      );
+    }
+    public function beliven_option_page(){
+      if (isset($_POST['del_logs'])) {
+        $value = $_POST['del_logs'];
+        update_option('del_logs', $value);
+      }
+      if (isset($_POST['retention_datetime_logs'])) {
+        $value = $_POST['retention_datetime_logs'];
+        update_option('retention_datetime_logs', $value);
+      }
+  
+     
+      require_once 'partials/options.php';
+  }
   }
 

@@ -30,7 +30,27 @@ class Plugin_Name_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
-
+    $plugin_name = 'plugin_name';
+      $del_logs = get_option('del_logs');
+      if ($del_logs === 'true') {
+        $args = array (
+            'numberposts' => -1,
+            'post_type' => 'logs'
+        );
+        $logs = get_posts($args);
+        if (empty($logs)) return;
+      }
+    foreach ($logs as $log) {
+      wp_delete_post($log->ID, true);
+      delete_post_meta($log->ID, $plugin_name.'_log_datetime');
+      delete_post_meta($log->ID, $plugin_name.'_user_id');
+      delete_post_meta($log->ID, $plugin_name.'_user_ip');
+      delete_post_meta($log->ID, $plugin_name.'_log_post_type');
+      delete_post_meta($log->ID, $plugin_name.'_log_action');
+      delete_post_meta($log->ID, $plugin_name.'_log_metadata');
+    }
+    
+    
 	}
 
 }
