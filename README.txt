@@ -14,3 +14,13 @@ Viene restituito un token da aggiungere agli header per l'endpoint /wp-json/logg
 Da aggiungere all'header: Authorization "Basic {token}"
 
 
+CODICE:
+
+File editati del boilerplate:
+
+admin/class-plugin-name-admin.php
+public/class-plugin-name-public.php
+includes/class-plugin-name-activator.php
+includes/class-plugin-name-deactivator.php
+
+Tempo di coding: 7:35 ore
