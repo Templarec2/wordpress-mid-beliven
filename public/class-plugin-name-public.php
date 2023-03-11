@@ -20,13 +20,8 @@ class Plugin_Name_Public {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-    /*
-         Hook che viene triggerato quando un post passa allo stato publish e trash (Create, Delete) OBSOLETA
-       */
-    //add_action('transition_post_status', array($this, 'log_new_post'), 10, 3);
-    
-    /*
-  Hook che viene triggerato quando un post viene aggiornato (CUD)
+/*
+  Hook che viene triggerato quando un post viene salvato, aggiorna, eliminato
 */
     add_action('post_updated', array($this, 'log_update_post'), 10, 3);
 	}
@@ -77,76 +72,9 @@ class Plugin_Name_Public {
 
 	}
   
+
   /*
-      Funzione salvataggio log post creati ed eliminati (non serve più)
-    */
-  public function log_new_post($new, $old, $post)
-  {
-    if ((($new == 'publish') && ($old != 'publish')) && ($post->post_type !== 'logs')) {
-      $my_post = array(
-          'post_title' => "Post: $post->ID - $new",
-          'post_content' => "",
-          'post_status' => 'publish',
-          'post_type' => 'logs',
-          'post_author' => 1,
-      
-      );
-      
-      $saved_post = wp_insert_post($my_post);
-      $other_data = [
-          'id' => $post->ID,
-          'title' => $post->post_title,
-      
-      ];
-      $other_data = json_encode($other_data);
-      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-      } else {
-        $ip = $_SERVER['REMOTE_ADDR'];
-      }
-      update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
-      update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
-      update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
-      update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
-      update_post_meta($saved_post, $this->plugin_name.'_log_action', $post->post_status);
-      update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
-    }
-    if ((($new == 'trash') && ($old != 'trash')) && ($post->post_type !== 'logs')) {
-      $my_post = array(
-          'post_title' => "Post: $post->ID - $new",
-          'post_content' => "",
-          'post_status' => 'publish',
-          'post_type' => 'logs',
-          'post_author' => 1,
-      
-      );
-      $saved_post = wp_insert_post($my_post);
-      $other_data = [
-          'id' => $post->ID,
-          'title' => $post->post_title,
-      
-      ];
-      $other_data = json_encode($other_data);
-      if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-        $ip = $_SERVER['HTTP_CLIENT_IP'];
-      } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
-      } else {
-        $ip = $_SERVER['REMOTE_ADDR'];
-      }
-      update_post_meta($saved_post, $this->plugin_name.'_log_datetime', $post->post_date);
-      update_post_meta($saved_post, $this->plugin_name.'_user_id', $post->post_author);
-      update_post_meta($saved_post, $this->plugin_name.'_user_ip', $ip);
-      update_post_meta($saved_post, $this->plugin_name.'_log_post_type', $post->post_type);
-      update_post_meta($saved_post, $this->plugin_name.'_log_action', $post->post_status);
-      update_post_meta($saved_post, $this->plugin_name.'_log_metadata', $other_data);
-    }
-  }
-  
-  /*
-    Funzione salvataggio log post aggiornati
+    Funzione salvataggio log
   */
   public function log_update_post($post_id, $post, $post_before)
   {

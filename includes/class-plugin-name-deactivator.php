@@ -30,6 +30,8 @@ class Plugin_Name_Deactivator {
 	 * @since    1.0.0
 	 */
 	public static function deactivate() {
+    
+    //cancello i log quando disattivo plugin se la variabile in option page è true
     $plugin_name = 'plugin_name';
       $del_logs = get_option('del_logs');
       if ($del_logs === 'true') {
@@ -49,7 +51,7 @@ class Plugin_Name_Deactivator {
       delete_post_meta($log->ID, $plugin_name.'_log_action');
       delete_post_meta($log->ID, $plugin_name.'_log_metadata');
     }
-    
+    // fermo il cron
     wp_clear_scheduled_hook('bl_cron_log_retention');
     
 	}
