@@ -31,7 +31,6 @@
        Assegnazione capabilities ad editor e Admin
      */
       add_action('admin_init', array($this, 'add_theme_caps'));
-      add_action('admin_init', array($this, 'create_nonce_rest'));
       
       add_action('admin_menu', array($this, 'logs_option_page'));
       /*
@@ -698,16 +697,17 @@
         
       );
       $logs = get_posts($args);
+      $results = [];
       foreach ($logs as $log){
         $log_datetime = get_post_meta($log->ID, $this->plugin_name.'_log_datetime', true );
         $user_id = get_post_meta($log->ID, $this->plugin_name.'_user_id', true );
         $user_ip = get_post_meta($log->ID, $this->plugin_name.'_user_ip', true );
-        $log_action = get_post_meta($log->ID, $this->plugin_name.'_log_datetime', true );
+        $log_action = get_post_meta($log->ID, $this->plugin_name.'_log_action', true );
         $log_metadata = get_post_meta($log->ID, $this->plugin_name.'_log_metadata', true );
         $log_post_type = get_post_meta($log->ID, $this->plugin_name.'_log_post_type', true );
         
         $result = [
-            'data' => [
+            'log' => [
                 'log_datetime' => $log_datetime,
                 'user_id' => $user_id,
                 'user_ip' => $user_ip,
@@ -716,8 +716,9 @@
                 'log_metadata' => json_decode($log_metadata),
             ]
         ];
+        array_push($results, $result);
       }
-      return $result;
+      return $results;
   }
   }
   
