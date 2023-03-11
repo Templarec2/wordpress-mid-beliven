@@ -24,3 +24,7 @@ includes/class-plugin-name-activator.php
 includes/class-plugin-name-deactivator.php
 
 Tempo di coding: 7:35 ore
+
+
+
+Lorenzo Bernini
